@@ -1,4 +1,4 @@
-pertanian
+pertanian v0.2a
 =========
 
 XSL stats crawler for indonesian food crops
