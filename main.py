@@ -27,10 +27,14 @@ def main():
     post_request_dict_update(selects)
 
     # initiate the traversing
-    recursive_func(selects)
+    iterate_over_selects(selects)
 
 
-def recursive_func(selectors, hidden_inputs=[]):
+def iterate_over_selects(selectors, hidden_inputs=None):
+    # if there are no hidden inputs specified default it to empty array
+    if not hidden_inputs:
+        hidden_inputs = []
+    # iterate over the selects (drop-downs) on page
     for select in selectors:
         # get name of the selector (a.k.a. province, status, years, etc.)
         opt_name = select.attrs.get('name')
@@ -44,38 +48,12 @@ def recursive_func(selectors, hidden_inputs=[]):
 
         # get all available options and iterate over them
         options = select.findAll('option')
-        for opt in options:
-            opt_value = opt.attrs.get('value')
-            if opt_value == '':
-                continue
 
-            # generate the new POST data
-            request_values[opt_name] = opt_value
+        # for each option of the current drop down - make a request
+        iterate_over_options(options, opt_name, hidden_inputs)
 
-            for hidden_input in hidden_inputs:
-                request_values[hidden_input.attrs.get('name')] = hidden_input.attrs.get('value')
-
-            new_request_data = urllib.urlencode(request_values)
-            print('New headers to be send', new_request_data)  # for debugging/logging purposes
-
-            # send the next POST request
-
-            new_request = make_request(new_request_data)
-            new_soup = BeautifulSoup(new_request)
-            new_selects = new_soup.findAll('select')
-            new_inputs = new_soup.findAll('input')
-            hidden_inputs = []
-            for new_input in new_inputs:
-                if new_input.attrs.get('type') == 'hidden':
-                    hidden_inputs.append(new_input)
-            # sleep for 2 seconds so that we don't overflow the request servers
-            time.sleep(3)
-
-            # go to the next iteration of the loop
-            recursive_func(new_selects, hidden_inputs)
-
-        # once we have exercised all options for a level remove it from used list
-        # so we can iterate over it once again by exercising the next option of the
+        # Once we have exercised all options for a level remove it from the list of values in use.
+        # We can then iterate over the same element once again by using the next option of the
         # parent selector. If by removing it we end up removing the only child (root)
         # that means we have completed.
 
@@ -84,12 +62,62 @@ def recursive_func(selectors, hidden_inputs=[]):
         if len(values_in_use) == 0:
             exit("Completed!")
 
-    print("Download now!")
-    downloader.download_file(download_url, request_values)
-    # remove hidden values to prevent duplication
-    for hidden_input in hidden_inputs:
-        if request_values.has_key(hidden_input.attrs.get('name')):
-            request_values.pop(hidden_input.attrs.get('name'))
+    # Proceed downloading the file
+    if len(hidden_inputs) == 8:
+
+        # process hidden fields into a request
+        download_request_headers = {}
+        for hidden_input in hidden_inputs:
+            download_request_headers[hidden_input.attrs.get('name')] = hidden_input.attrs.get('value')
+
+        # add 'excel' header
+        download_request_headers['save'] = 'xl'
+
+        #actually download
+        downloader.download_file(download_url, download_request_headers)
+
+        #end section
+
+
+def iterate_over_options(options, opt_name, hidden_inputs):
+    for opt in options:
+        # skip empty values, those denote comments on the site (omg)
+        opt_value = opt.attrs.get('value')
+        if opt_value == '':
+            continue
+
+        # generate the new POST data
+        request_values[opt_name] = opt_value
+
+        # update the request values from hidden fields
+        for hidden_input in hidden_inputs:
+            if not request_values.has_key(hidden_input.attrs.get('name')):
+                request_values[hidden_input.attrs.get('name')] = hidden_input.attrs.get('value')
+
+        new_request_data = urllib.urlencode(request_values)
+        print 'Request: ', new_request_data  # for debugging/logging purposes
+
+        # send the next POST request
+        new_request = make_request(new_request_data)
+
+        # convert into Beautiful Soap
+        new_soup = BeautifulSoup(new_request)
+
+        # get selects & inputs
+        new_selects = new_soup.findAll('select')
+        new_inputs = new_soup.findAll('input')
+
+        # get hidden inputs
+        hidden_inputs = []
+        for new_input in new_inputs:
+            if new_input.attrs.get('type') == 'hidden':
+                hidden_inputs.append(new_input)
+
+        # sleep for 2 seconds so that we don't overflow the request servers
+        time.sleep(5)
+
+        # go to the next iteration of the loop
+        iterate_over_selects(new_selects, hidden_inputs)
 
 
 def make_request(new_request_data):
@@ -99,8 +127,8 @@ def make_request(new_request_data):
         try:
             new_request = urllib2.urlopen(url, new_request_data).read()
             successful_request = True
-        except(IOError, httplib.HTTPException):
-            print ("Error happened! headers: ", new_request_data)
+        except(IOError, httplib.HTTPException, httplib.BadStatusLine):
+            print 'Error happened! headers: ', new_request_data
 
     return new_request
 
@@ -114,7 +142,7 @@ def post_request_dict_update(selectors):
             selected_value = selected_value_list[0].attrs.get('value')
 
         request_values[name] = selected_value
-    print("The first request will be made with the following values", request_values)
+    print 'The first request will be made with the following values', request_values
 
 
 main()

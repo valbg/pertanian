@@ -15,11 +15,7 @@ def download_file(url, request_values):
     req = urllib2.Request(url, headers={'User-Agent': "IE9"})  # identify as IE to avoid being blocked (403-ed)
     request_data = urllib.urlencode(request_values)
 
-    try:
-        u = urllib2.urlopen(req, request_data)
-    except (IOError, httplib.HTTPException):
-        print("HTTP EXCEPTION : Could not download file")
-        return
+    u = make_request(req, request_data)
 
     f = open(file_name + file_ext, 'wb')
     meta = u.info()
@@ -39,4 +35,16 @@ def download_file(url, request_values):
         status += chr(8) * (len(status) + 1)
         print status,
 
+    print '\n'
+
     f.close()
+
+
+def make_request(req, request_data):
+    while True:
+        try:
+            response = urllib2.urlopen(req, request_data)
+            break
+        except(IOError, httplib.HTTPException, httplib.BadStatusLine):
+            print 'HTTP EXCEPTION : Could not download file \n Will retry! \n'
+    return response
