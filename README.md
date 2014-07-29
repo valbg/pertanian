@@ -1,4 +1,4 @@
-pertanian v0.2a
+pertanian v0.3
 =========
 
 XSL stats crawler for indonesian food crops
@@ -9,4 +9,4 @@ Requirements:
 * BeautifulSoap (for mac you need escalated priviledges to install it)
 
 To run:
-> python main.py
+> > python main.py
