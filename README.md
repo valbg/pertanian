@@ -1,12 +1,13 @@
 pertanian v0.3
 =========
 
-XSL stats crawler for indonesian food crops
+Statistics crawler for indonesian food crops
 
+*now in english
 
 Requirements:
 * Python
 * BeautifulSoap (for mac you need escalated priviledges to install it)
 
 To run:
-> > python main.py
+> python main.py
