@@ -6,9 +6,9 @@ import urllib2
 from bs4 import BeautifulSoup
 
 # url of the site
-url = 'http://aplikasi.pertanian.go.id/bdsp/newkom.asp'
+url = 'http://aplikasi.pertanian.go.id/bdsp/newkom-e.asp'
 # download url
-download_url = 'http://aplikasi.pertanian.go.id/bdsp/hasil_kom.asp'
+download_url = 'http://aplikasi.pertanian.go.id/bdsp/hasil_kom-e.asp'
 
 # initialize request dictionary
 request_values = {}
@@ -58,6 +58,7 @@ def iterate_over_selects(selectors, hidden_inputs=None):
         # that means we have completed.
 
         values_in_use.remove(opt_name)
+        request_values[opt_name] = ''
 
         if len(values_in_use) == 0:
             exit("Completed!")
